@@ -4,7 +4,7 @@ SEARCH_PATH=$(P4_SOURCES_DIR)/headers
 TARGET=bmv2
 ARCH=v1model
 
-define add_scenario_rule
+define add_scenario_rules
 scenario-$(1):
 	$(eval SOURCES_DIR=$(P4_SOURCES_DIR)/$(1))
 	$(eval WORKING_DIR=$(BUILD_DIR)/$(1))
@@ -14,6 +14,7 @@ scenario-$(1):
 	p4c --target $(TARGET) --arch $(ARCH) -I $(SEARCH_PATH) \
 		-o $(WORKING_DIR) $(SOURCES)
 
+scenario-$(1)-graphs:
 	mkdir -p $(GRAPHS_DIR)
 	p4c-graphs -I $(SEARCH_PATH) --graphs-dir $(GRAPHS_DIR) $(SOURCES)
 	for file in `ls $(GRAPHS_DIR)/*.dot`; do \
@@ -22,12 +23,14 @@ scenario-$(1):
 	rm -rf $(GRAPHS_DIR)/*.dot
 endef
 
-$(eval $(call add_scenario_rule,l2sw))
+$(eval $(call add_scenario_rules,l2sw))
 
 create-env:
 	mkdir -p ${BUILD_DIR}
 
 all: create-env scenario-l2sw
+
+graphs: scenario-l2sw-graphs
 
 clean:
 	rm -rf ${BUILD_DIR}
