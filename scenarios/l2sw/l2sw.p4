@@ -4,7 +4,7 @@
 
 #define TABLE_CAPACITY 1024
 
-struct headers {
+struct headers_t {
     ethernet_t ethernet;
 }
 
@@ -17,7 +17,7 @@ struct metadata { }
 
 parser ParserImpl (
     packet_in buffer,
-    out headers parsed_hdr,
+    out headers_t parsed_hdr,
     inout metadata meta,
     inout standard_metadata_t ostd
     )
@@ -33,7 +33,7 @@ parser ParserImpl (
 }
 
 control VerifyChecksumImpl (
-    inout headers hdr,
+    inout headers_t hdr,
     inout metadata meta
     )
 {
@@ -41,7 +41,7 @@ control VerifyChecksumImpl (
 }
 
 control IngressImpl (
-    inout headers hdr,
+    inout headers_t hdr,
     inout metadata meta,
     inout standard_metadata_t ostd
     )
@@ -58,14 +58,14 @@ control IngressImpl (
         // TODO
     }
 
-    action broadcast(port_t port_id) {
+    action broadcast() {
         ostd.drop = 0;
-        // TODO
+        ostd.mcast_grp = 1;
     }
 
     action multicast(mcast_group_t group_id) {
         ostd.drop = 0;
-        // TODO clone(I2E, )
+        ostd.mcast_grp = group_id;
     }
 
     action unicast(port_t port_id) {
@@ -96,7 +96,7 @@ control IngressImpl (
 }
 
 control EgressImpl (
-    inout headers hdr,
+    inout headers_t hdr,
     inout metadata meta,
     inout standard_metadata_t ostd
     )
@@ -105,7 +105,7 @@ control EgressImpl (
 }
 
 control ComputeChecksumImpl (
-    inout headers hdr,
+    inout headers_t hdr,
     inout metadata meta)
 {
     apply { }
@@ -113,7 +113,7 @@ control ComputeChecksumImpl (
 
 control DeparserImpl (
     packet_out buffer,
-    in headers hdr)
+    in headers_t hdr)
 {
     apply {
         buffer.emit(hdr.ethernet);
