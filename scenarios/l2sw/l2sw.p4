@@ -3,6 +3,7 @@
 #include <v1model.p4>
 
 #define TABLE_CAPACITY 1024
+#define MAC_LEARN_RCVR 1
 
 struct headers_t {
     ethernet_t ethernet;
@@ -47,20 +48,19 @@ control IngressImpl (
     )
 {
     action learn() {
-        mark_to_drop();
         learn_digest_t msg;
         msg.src_mac = hdr.ethernet.srcAddr;
         msg.port = ostd.ingress_port;
-        digest(1, msg);
+        digest(MAC_LEARN_RCVR, msg);
     }
 
     action update() {
-        // TODO
+        // TODO: not sure how timeouts are implemented
     }
 
     action broadcast() {
         ostd.drop = 0;
-        ostd.mcast_grp = 1;
+        ostd.mcast_grp = 0;
     }
 
     action multicast(mcast_group_t group_id) {
@@ -78,6 +78,7 @@ control IngressImpl (
         actions = { learn; update; }
         default_action = learn;
         size = TABLE_CAPACITY;
+        support_timeout = true;
     }
 
     table dst_mac {
@@ -85,6 +86,7 @@ control IngressImpl (
         actions = { broadcast; multicast; unicast; }
         default_action = broadcast;
         size = TABLE_CAPACITY;
+        support_timeout = true;
     }
 
     apply {
