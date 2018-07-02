@@ -1,48 +1,32 @@
 #!/usr/bin/env python3
 
-from scapy.all import Packet
+from scapy.all import PacketList
 from scapy.all import Ether, TCP, IP
 from scapy.all import RandMAC, RandIP
-from scapy.all import sendp, get_if_hwaddr, sniff
+from scapy.all import get_if_hwaddr
 from random import randint
-from threading import Thread
-import sys
-
-iface_in = 'veth2'
-iface_local = 'veth0'
-iface_out = 'veth4'
+from switch_monitor import SwitchMonitor
 
 
-def make_pkt(dst='2'):
-    pkt = Ether(src=get_if_hwaddr(iface_in), dst=("00:00:00:00:02:0"+dst))
-    pkt = pkt/IP(dst="192.168.200.24")
-    pkt = pkt/TCP(dport=1234, sport=randint(49152,65535))/("load"*1)
+def make_pkt(dst, iface):
+    pkt = Ether(src=get_if_hwaddr(iface), dst=("00:00:00:00:02:0"+dst))
     return pkt
 
+port_map = {
+    0: 'veth0',
+    1: 'veth2',
+    #2: 'veth4',
+    3: 'veth6'
+}
 
-expected = make_pkt()
+local_port = 0
+sender = 1
 
-
-def sender():
-    print('sender')
-    expected.show2()
-    sendp(expected, iface=iface_in)
-    sys.stdout.flush()
-
-
-def handle_pkt(pkt):
-    print(Packet(pkt) == Packet(expected))
-    pkt.show2()
-    sys.stdout.flush()
+packet_map = {
+    1: PacketList(make_pkt('3', 'veth2'))
+}
 
 
-def receiver():
-    print('receiver')
-    sniff(count=1, iface=iface_out, prn=handle_pkt)
-    sys.stdout.flush()
-
-
-sndr = Thread(target=sender)
-rcvr = Thread(target=receiver)
-rcvr.start()
-sndr.start()
+sm = SwitchMonitor(port_map, senders=[1], pkt_map=packet_map)
+res = sm.run()
+print(res.data)
