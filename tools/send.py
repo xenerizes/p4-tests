@@ -10,6 +10,8 @@ from switch_monitor import SwitchMonitor
 
 def make_pkt(dst, iface):
     pkt = Ether(src=get_if_hwaddr(iface), dst=("00:00:00:00:02:0"+dst))
+    pkt = pkt/IP(dst="192.168.200.24")
+    pkt = pkt/TCP(dport=1234, sport=randint(49152,65535))/("load")
     return pkt
 
 port_map = {
