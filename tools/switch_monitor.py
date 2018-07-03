@@ -21,7 +21,8 @@ class PortMonitor(Thread):
     """
     Sniff on specified switch port
     """
-    def __init__(self, port, iface, packets=1, results=None, **kwargs):
+    def __init__(self, port, iface, packets=1, results=None,
+                 timeout=5, **kwargs):
         """
         :param port: port id
         :param iface: interface name
@@ -38,9 +39,10 @@ class PortMonitor(Thread):
         self.iface = iface
         self.packets = packets
         self.results = results
+        self.timeout = timeout
 
     def run(self):
-        res = sniff(count=self.packets, iface=self.iface)
+        res = sniff(count=self.packets, iface=self.iface, timeout=self.timeout)
         if self.results is not None:
             self.results.add(self.port, res)
         else:
