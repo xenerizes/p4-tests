@@ -5,6 +5,18 @@
 #define TABLE_CAPACITY 1024
 #define MAC_LEARN_RCVR 1
 
+/* Packet type identifiers */
+#define UNICAST_ID = 0
+#define BROADCAST_ID = 1
+#define MULTICAST_ID = 2
+
+/* Selector parameters */
+#define SELECTOR_SIZE 32w1024
+#define SELECTOR_OUT_SIZE 32w10
+#define HASH_BASE 16w0
+#define HASH_MAX 32w65536
+
+
 struct headers_t {
     ethernet_t ethernet;
 }
@@ -14,7 +26,9 @@ struct learn_digest_t {
     ethaddr_t src_mac;
 }
 
-struct metadata { }
+struct metadata {
+    bit<16> group_key;
+}
 
 parser ParserImpl (
     packet_in buffer,
@@ -47,6 +61,8 @@ control IngressImpl (
     inout standard_metadata_t ostd
     )
 {
+    /* Table source MAC */
+
     action learn() {
         learn_digest_t msg;
         msg.src_mac = hdr.ethernet.srcAddr;
@@ -58,42 +74,60 @@ control IngressImpl (
         // TODO: not sure how timeouts are implemented
     }
 
+    table src_mac {
+        key = { hdr.ethernet.srcAddr: exact; }
+        actions = { learn; update; }
+        default_action = learn;
+        support_timeout = true;
+
+        const entries = {
+            (0xffffffffffff): update();
+        }
+    }
+
+    /* Table destination MAC */
+
+    // TODO: exclude ingress_port
     action broadcast() {
         ostd.drop = 0;
         ostd.mcast_grp = 0;
     }
 
-    action multicast(mcast_group_t group_id) {
+    action forward(port_t port) {
         ostd.drop = 0;
-        ostd.mcast_grp = group_id;
-    }
-
-    action unicast(port_t port_id) {
-        ostd.drop = 0;
-        ostd.egress_spec = port_id;
-    }
-
-    table src_mac {
-        key = { hdr.ethernet.srcAddr: exact; }
-        actions = { learn; update; }
-        default_action = learn;
-        size = TABLE_CAPACITY;
-        support_timeout = true;
+        ostd.egress_spec = port;
     }
 
     table dst_mac {
-        key = { hdr.ethernet.dstAddr: exact; }
-        actions = { broadcast; multicast; unicast; }
+        key = {
+            hdr.ethernet.dstAddr: exact;
+            meta.group_key: selector;
+        }
+        actions = { broadcast; forward; }
         default_action = broadcast;
+
         size = TABLE_CAPACITY;
         support_timeout = true;
+
+        @name("as") implementation = action_selector(
+            HashAlgorithm.identity,
+            SELECTOR_SIZE,
+            SELECTOR_OUT_SIZE
+        );
     }
 
     apply {
-        if (hdr.ethernet.isValid()) {
-            src_mac.apply();
-            dst_mac.apply();
-        }
+        hash(
+            meta.group_key,
+            HashAlgorithm.crc16,
+            HASH_BASE, {
+                hdr.ethernet.srcAddr,
+                hdr.ethernet.dstAddr
+            },
+            HASH_MAX);
+
+        src_mac.apply();
+        dst_mac.apply();
     }
 }
 
