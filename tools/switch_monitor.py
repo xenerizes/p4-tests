@@ -75,7 +75,7 @@ class SwitchMonitor(object):
     """
     Send packets and monitor them on specified ports
     """
-    def __init__(self, port_map, senders, pkt_map=[]):
+    def __init__(self, port_map, pkt_map=[]):
         """
         :param port_map: port-interface mapping ({port: "interface"})
         :param senders: ports to send the packets
@@ -89,12 +89,12 @@ class SwitchMonitor(object):
 
         self.monitors = list(
             PortMonitor(port, iface, results=self.sniff_res)
-            for port, iface in self.port_map.items() if port not in senders
+            for port, iface in self.port_map.items() if port not in pkt_map
         )
         self.senders = list(
             Sender(port, iface, pkt_list=pkt_map[port])
             for port, iface in self.port_map.items()
-            if port in senders
+            if port in pkt_map
         )
 
     def run(self):
