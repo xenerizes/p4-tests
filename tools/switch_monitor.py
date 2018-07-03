@@ -66,7 +66,6 @@ class Sender(Thread):
         self.packets = pkt_list
 
     def run(self):
-        print(self.packets)
         sendp(self.packets, iface=self.iface)
 
 
