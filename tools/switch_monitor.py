@@ -1,6 +1,6 @@
 from threading import Thread, Lock
 from scapy.all import sniff
-from scapy.all import send
+from scapy.all import sendp
 
 
 class SniffResults(object):
@@ -66,7 +66,8 @@ class Sender(Thread):
         self.packets = pkt_list
 
     def run(self):
-        send(self.packets, iface=self.iface)
+        print(self.packets)
+        sendp(self.packets, iface=self.iface)
 
 
 class SwitchMonitor(object):
