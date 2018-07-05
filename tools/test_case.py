@@ -1,4 +1,4 @@
-from switch_monitor import SwitchMonitor
+from tools.switch_monitor import SwitchMonitor
 
 
 def get_pkt_fields(pkt):
@@ -43,8 +43,9 @@ class ScenarioTestCase(object):
     Run test case: send, receive packets and compare with expected
     """
     def __init__(self, port_map, packet_map, expected_map):
-        self.port_map, self.packet_map, self.expected_map =
-            port_map, packet_map, expected_map
+        self.port_map = port_map
+        self.packet_map = packet_map
+        self.expected_map = expected_map
         self.captured_map = None
 
     def run(self):

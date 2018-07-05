@@ -9,4 +9,4 @@ def make_pkt(dst, iface):
     pkt = pkt/IP(dst="192.168.200.24")
     pkt = pkt/TCP(dport=1234, sport=randint(49152,65535))
     pkt = pkt/("GET /path/resource?param1=value1&param2=value2 HTTP/1.1")
-    return pktt
+    return pkt
