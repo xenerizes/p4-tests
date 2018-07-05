@@ -68,7 +68,7 @@ class Sender(Thread):
         self.packets = pkt_list
 
     def run(self):
-        sendp(self.packets, iface=self.iface)
+        sendp(self.packets, iface=self.iface, verbose=False)
 
 
 class SwitchMonitor(object):
