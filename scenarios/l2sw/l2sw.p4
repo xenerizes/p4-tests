@@ -74,7 +74,7 @@ control IngressImpl (
         // TODO: not sure how timeouts are implemented
     }
 
-    table src_mac {
+    @name("src_mac") table src_mac {
         key = { hdr.ethernet.srcAddr: exact; }
         actions = { learn; update; }
         default_action = learn;
@@ -88,17 +88,17 @@ control IngressImpl (
     /* Table destination MAC */
 
     // TODO: exclude ingress_port
-    action broadcast() {
+    @name("broadcast") action broadcast() {
         ostd.drop = 0;
         ostd.mcast_grp = 0;
     }
 
-    action forward(port_t port) {
+    @name("forward") action forward(port_t port) {
         ostd.drop = 0;
         ostd.egress_spec = port;
     }
 
-    table dst_mac {
+    @name("dst_mac") table dst_mac {
         key = {
             hdr.ethernet.dstAddr: exact;
             meta.group_key: selector;
@@ -109,7 +109,7 @@ control IngressImpl (
         size = TABLE_CAPACITY;
         support_timeout = true;
 
-        @name("as") implementation = action_selector(
+        @name("selector") implementation = action_selector(
             HashAlgorithm.identity,
             SELECTOR_SIZE,
             SELECTOR_OUT_SIZE
