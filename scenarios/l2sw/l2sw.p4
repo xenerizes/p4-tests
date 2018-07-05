@@ -87,10 +87,8 @@ control IngressImpl (
 
     /* Table destination MAC */
 
-    // TODO: exclude ingress_port
     action broadcast() {
-        ostd.drop = 0;
-        ostd.mcast_grp = 0;
+        // TODO if possible
     }
 
     action forward(port_t port) {
