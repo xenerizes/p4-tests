@@ -31,6 +31,9 @@ $(eval $(call add_scenario_rules,l2sw))
 
 all: scenario-l2sw
 
+test:
+	./run_tests.sh
+
 graphs: scenario-l2sw-graphs
 
 clean: scenario-l2sw-clean
