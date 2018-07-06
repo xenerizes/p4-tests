@@ -13,7 +13,7 @@ class SniffResults(object):
 
     def add(self, port, pkt_list):
         self.lck.acquire()
-        self.data[port] = pkt_list
+        self.data[port] = list(pkt_list)
         self.lck.release()
 
 

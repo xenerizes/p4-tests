@@ -1,17 +1,15 @@
 from tools.switch_monitor import SwitchMonitor
+from scapy.all import Raw
 from sys import stdout
 
 
 def compare_pkt_list(expected, captured):
-    """
-    Compare two packet lists
-    """
     for pkt in expected:
-        if pkt not in captured:
+        id = pkt[Raw].load
+        fltr = filter(lambda x: x[Raw].load == id, captured)
+        if len(list(fltr)) != 1:
             return False
-        captured.remove(pkt)
-
-    return len(captured) == 0
+    return True
 
 
 class ScenarioTestCase(object):
