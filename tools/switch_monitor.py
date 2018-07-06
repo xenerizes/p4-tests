@@ -22,7 +22,7 @@ class PortMonitor(Thread):
     Sniff on specified switch port
     """
     def __init__(self, port, iface, packets=1, results=None,
-                 timeout=5, **kwargs):
+                 timeout=25, **kwargs):
         """
         :param port: port id
         :param iface: interface name
@@ -75,7 +75,7 @@ class SwitchMonitor(object):
     """
     Send packets and monitor them on specified ports
     """
-    def __init__(self, port_map, pkt_map=[]):
+    def __init__(self, port_map, pkt_map, exp_map):
         """
         :param port_map: port-interface mapping ({port: "interface"})
         :param senders: ports to send the packets
@@ -88,13 +88,13 @@ class SwitchMonitor(object):
         self.sniff_res = SniffResults()
 
         self.monitors = list(
-            PortMonitor(port, iface, results=self.sniff_res)
-            for port, iface in self.port_map.items() if port not in pkt_map
+            PortMonitor(port, iface, packets=len(exp_map[port])*2,
+                        results=self.sniff_res)
+            for port, iface in self.port_map.items() if port in exp_map
         )
         self.senders = list(
             Sender(port, iface, pkt_list=pkt_map[port])
-            for port, iface in self.port_map.items()
-            if port in pkt_map
+            for port, iface in self.port_map.items() if port in pkt_map
         )
 
     def run(self):

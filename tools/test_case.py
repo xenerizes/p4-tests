@@ -3,13 +3,15 @@ from scapy.all import Raw
 from sys import stdout
 
 
-def compare_pkt_list(expected, captured):
-    for pkt in expected:
-        id = pkt[Raw].load
-        fltr = filter(lambda x: x[Raw].load == id, captured)
-        if len(list(fltr)) != 1:
-            return False
-    return True
+def compare_pkt_list(captured, expected):
+    if (len(captured) == len(expected)):
+        for pkt in expected:
+            id = pkt[Raw].load
+            fltr = list(filter(lambda x: x[Raw].load == id, captured))
+            if len(fltr) < 1:
+                return False
+        return True
+    return False
 
 
 class ScenarioTestCase(object):
@@ -29,7 +31,8 @@ class ScenarioTestCase(object):
         stdout.write(self.delim)
         stdout.flush()
 
-        monitor = SwitchMonitor(port_map=self.port_map, pkt_map=self.packet_map)
+        monitor = SwitchMonitor(port_map=self.port_map, pkt_map=self.packet_map,
+                                exp_map=self.expected_map)
         self.captured_map = monitor.run().data
         eq = self.compare_pkt_maps()
 
@@ -40,7 +43,7 @@ class ScenarioTestCase(object):
         print('Captured: ', self.captured_map)
 
     def compare_pkt_maps(self):
-        for port in self.expected_map:
+        for port in self.expected_map.keys():
             if not compare_pkt_list(self.captured_map[port],
                                     self.expected_map[port]):
                 return False
