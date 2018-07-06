@@ -18,8 +18,9 @@ port_map = {
 tests = [ "Broadcast", "Multicast"]#, "Unicast", "Mixed" ]
 
 test_maps = [
-    { 1: list(make_pkt('99:99', 'veth2', id='1')) },
-    { 3: list(make_pkt('01:01', 'veth6', mcast=True, id='2')) }
+    { 1: list(make_pkt('99:99', 'veth2', id=str(i)) for i in range(3)) },
+    { 3: list(make_pkt('11:11', 'veth6', mcast=True, id=str(i))
+              for i in range(3, 5)) }
 ]
 
 expected_maps = [
@@ -32,7 +33,8 @@ expected_maps = [
     {
         0: list(),
         1: test_maps[1][3].copy(),
-        2: test_maps[1][3].copy()
+        2: test_maps[1][3].copy(),
+        3: list()
     }
 ]
 
