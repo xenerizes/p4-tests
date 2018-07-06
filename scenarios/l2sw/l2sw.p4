@@ -4,17 +4,7 @@
 
 #define TABLE_CAPACITY 1024
 #define MAC_LEARN_RCVR 1
-
-/* Packet type identifiers */
-#define UNICAST_ID = 0
-#define BROADCAST_ID = 1
-#define MULTICAST_ID = 2
-
-/* Selector parameters */
-#define SELECTOR_SIZE 32w1024
-#define SELECTOR_OUT_SIZE 32w10
-#define HASH_BASE 16w0
-#define HASH_MAX 32w65536
+#define BROADCAST_GRP 1
 
 
 struct headers_t {
@@ -26,9 +16,7 @@ struct learn_digest_t {
     ethaddr_t src_mac;
 }
 
-struct metadata {
-    bit<16> group_key;
-}
+struct metadata { }
 
 parser ParserImpl (
     packet_in buffer,
@@ -71,7 +59,7 @@ control IngressImpl (
     }
 
     action update() {
-        // TODO: not sure how timeouts are implemented
+        // already implemented by target
     }
 
     table src_mac {
@@ -79,51 +67,33 @@ control IngressImpl (
         actions = { learn; update; }
         default_action = learn;
         support_timeout = true;
-
-        const entries = {
-            (0xffffffffffff): update();
-        }
     }
 
     /* Table destination MAC */
 
     action broadcast() {
-        // TODO if possible
+        ostd.mcast_grp = BROADCAST_GRP;
+    }
+
+    action multicast(mcast_group_t mcast_grp) {
+        ostd.mcast_grp = mcast_grp;
     }
 
     action forward(port_t port) {
-        ostd.drop = 0;
         ostd.egress_spec = port;
     }
 
     table dst_mac {
-        key = {
-            hdr.ethernet.dstAddr: exact;
-            meta.group_key: selector;
-        }
-        actions = { broadcast; forward; }
+        key = { hdr.ethernet.dstAddr: exact; }
+        actions = { broadcast; forward; multicast; }
         default_action = broadcast;
 
         size = TABLE_CAPACITY;
         support_timeout = true;
-
-        @name("as") implementation = action_selector(
-            HashAlgorithm.identity,
-            SELECTOR_SIZE,
-            SELECTOR_OUT_SIZE
-        );
     }
 
     apply {
-        hash(
-            meta.group_key,
-            HashAlgorithm.crc16,
-            HASH_BASE, {
-                hdr.ethernet.srcAddr,
-                hdr.ethernet.dstAddr
-            },
-            HASH_MAX);
-
+        ostd.drop = 0;
         src_mac.apply();
         dst_mac.apply();
     }
