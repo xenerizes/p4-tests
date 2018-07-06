@@ -6,6 +6,7 @@ from scapy.all import get_if_hwaddr
 from tools.test_case import ScenarioTestCase
 from tools.packets import make_pkt
 
+SCENARIO = 'l2sw'
 
 port_map = {
     0: 'veth0',
@@ -14,16 +15,29 @@ port_map = {
     3: 'veth6'
 }
 
-packet_map = {
-    1: list(make_pkt('3', 'veth2'))
-}
+tests = [ "Broadcast", "Multicast"]#, "Unicast", "Mixed" ]
 
-expected_map = {
-    3: packet_map[1].copy()
-}
+test_maps = [
+    { 1: list(make_pkt('99:99', 'veth2', id='1')) },
+    { 3: list(make_pkt('01:01', 'veth6', mcast=True, id='2')) }
+]
 
+expected_maps = [
+    {
+        0: test_maps[0][1].copy(),
+        2: test_maps[0][1].copy(),
+        3: test_maps[0][1].copy()
+    },
 
-test1 = ScenarioTestCase(port_map=port_map,
-                         packet_map=packet_map,
-                         expected_map=expected_map)
-test1.run()
+    {
+        0: list(),
+        1: test_maps[1][3].copy(),
+        2: test_maps[1][3].copy()
+    }
+]
+
+for idx, test_name in enumerate(tests):
+    test = ScenarioTestCase(scenario=SCENARIO, test=test_name,
+                            port_map=port_map, packet_map=test_maps[idx],
+                            expected_map=expected_maps[idx])
+    test.run()
