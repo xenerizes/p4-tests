@@ -1,5 +1,0 @@
-### L2sw
-#### Known issues
-* Default action does not work on simple switch target
-* Not sure about broadcast implementation
-* No timeouts for table entries

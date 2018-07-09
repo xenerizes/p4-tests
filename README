@@ -1,11 +1,22 @@
-### P4 scenarios
+P4 scenarios
+------
+
+#### Overview
+Scenarios are intended to be run with P4 switch emulator. Each scenario consists
+of P4 program `<scenario>.p4`, commands passed to switch during tests
+`commands.txt`, script with tests `test.py`.
 
 #### Dependencies
 
-P4 switch emulator: https://github.com/p4lang/behavioral-model
-
-P4 compiler: https://github.com/p4lang/p4c
+* [P4 switch emulator](https://github.com/p4lang/behavioral-model)
+* [P4 compiler](https://github.com/p4lang/p4c)
 
 Compiler is expected to be installed system-wide (make install allows that).
 
-Switch emulator installation directory is expected to be set in SWITCH_EMULATOR_PATH
+Switch emulator installation directory is expected to be set in
+`SWITCH_EMULATOR_PATH`.
+
+#### Running tests
+To run the tests, you need to specify switch emulator directory into required
+environmental variable, then compile the sources with `make` and run `make test`
+(super-user privilegies may be required).
