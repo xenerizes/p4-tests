@@ -39,9 +39,9 @@ expected_maps = [
         2: test_maps[1][3].copy()
     },
     {
-        1: [pkt for pkt in test_maps[2][0] if search('.*1', pkt.dst)],
-        2: [pkt for pkt in test_maps[2][0] if search('.*2', pkt.dst)],
-        3: [pkt for pkt in test_maps[2][0] if search('.*3', pkt.dst)]
+        1: [pkt.copy() for pkt in test_maps[2][0] if search('.*1', pkt.dst)],
+        2: [pkt.copy() for pkt in test_maps[2][0] if search('.*2', pkt.dst)],
+        3: [pkt.copy() for pkt in test_maps[2][0] if search('.*3', pkt.dst)]
     }
 ]
 
