@@ -1,6 +1,7 @@
 from threading import Thread, Lock
 from scapy.all import sniff
 from scapy.all import sendp
+from time import sleep
 
 
 class SniffResults(object):
@@ -21,8 +22,8 @@ class PortMonitor(Thread):
     """
     Sniff on specified switch port
     """
-    def __init__(self, port, iface, packets=1, results=None,
-                 timeout=25, **kwargs):
+    def __init__(self, port, iface, results=None,
+                 timeout=15, **kwargs):
         """
         :param port: port id
         :param iface: interface name
@@ -37,12 +38,11 @@ class PortMonitor(Thread):
         Thread.__init__(self, name=port, **kwargs)
         self.port = port
         self.iface = iface
-        self.packets = packets
         self.results = results
         self.timeout = timeout
 
     def run(self):
-        res = sniff(count=self.packets, iface=self.iface, timeout=self.timeout)
+        res = sniff(store=True, iface=self.iface, timeout=self.timeout)
         if self.results is not None:
             self.results.add(self.port, res)
         else:
@@ -88,8 +88,7 @@ class SwitchMonitor(object):
         self.sniff_res = SniffResults()
 
         self.monitors = list(
-            PortMonitor(port, iface, packets=len(exp_map[port])*2,
-                        results=self.sniff_res)
+            PortMonitor(port, iface, results=self.sniff_res)
             for port, iface in self.port_map.items() if port in exp_map
         )
         self.senders = list(
@@ -105,6 +104,7 @@ class SwitchMonitor(object):
         res = SniffResults()
         for m in self.monitors:
             m.start()
+        sleep(1)
         for s in self.senders:
             s.start()
         for m in self.monitors:
