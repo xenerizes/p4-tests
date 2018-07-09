@@ -4,14 +4,13 @@ from sys import stdout
 
 
 def compare_pkt_list(captured, expected):
-    if (len(captured) == len(expected)):
-        for pkt in expected:
-            id = pkt[Raw].load
-            fltr = list(filter(lambda x: x[Raw].load == id, captured))
-            if len(fltr) < 1:
-                return False
-        return True
-    return False
+    try:
+        captured_ids = [x[Raw].load for x in captured]
+        expected_ids = [x[Raw].load for x in expected]
+        return captured_ids == expected_ids
+    except IndexError:
+        # There is a packet without Raw layer
+        return False
 
 
 class ScenarioTestCase(object):
