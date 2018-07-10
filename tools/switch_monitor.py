@@ -23,7 +23,7 @@ class PortMonitor(Thread):
     Sniff on specified switch port
     """
     def __init__(self, port, iface, results=None,
-                 timeout=15, **kwargs):
+                 timeout=5, **kwargs):
         """
         :param port: port id
         :param iface: interface name

@@ -20,11 +20,11 @@ port_map = {
 tests = [ "Broadcast", "Multicast", "Unicast"]#, "Mixed" ]
 
 test_maps = [
-    { 1: list(make_pkt('99:99', 'veth2', id=str(i)) for i in range(100)) },
+    { 1: list(make_pkt('99:99', 'veth2', id=str(i)) for i in range(10)) },
     { 3: list(make_pkt('01:01', 'veth6', mcast=True, id=str(i))
-              for i in range(100, 200)) },
+              for i in range(10, 20)) },
     { 0: list(make_pkt('00:0{}'.format(randint(1, 3)), 'veth2', id=str(i))
-              for i in range(200, 300)) }
+              for i in range(20, 30)) }
 ]
 
 expected_maps = [
