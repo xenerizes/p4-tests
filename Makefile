@@ -28,12 +28,13 @@ scenario-$(1)-clean:
 endef
 
 $(eval $(call add_scenario_rules,l2sw))
+$(eval $(call add_scenario_rules,l2sw-vlan))
 
-all: scenario-l2sw
+all: scenario-l2sw scenario-l2sw-vlan
 
 test:
 	./run_tests.sh
 
-graphs: scenario-l2sw-graphs
+graphs: scenario-l2sw-graphs scenario-l2sw-vlan-graphs
 
-clean: scenario-l2sw-clean
+clean: scenario-l2sw-clean scenario-l2sw-vlan-clean
