@@ -22,7 +22,7 @@ struct learn_digest_t {
 }
 
 struct metadata {
-    bool not_tagged;
+    bool is_tagged;
 }
 
 parser ParserImpl (
@@ -33,7 +33,7 @@ parser ParserImpl (
     )
 {
     state start {
-        meta.not_tagged = false;
+        meta.is_tagged = true;
         transition parse_eth;
     }
 
@@ -42,11 +42,13 @@ parser ParserImpl (
         transition select(parsed_hdr.ethernet.etherType) {
             DOT1Q_ETHTYPE: parse_dot1q;
             DOT1Q_ETHTYPE_QINQ: parse_dot1q;
-            default: {
-                meta.not_tagged = true;
-                accept;
-            }
+            default: not_tagged;
         }
+    }
+
+    state not_tagged {
+        meta.is_tagged = false;
+        transition accept;
     }
 
     state parse_dot1q {
@@ -76,12 +78,8 @@ control IngressImpl (
     }
 
     table set_vlan {
-        key = {
-            meta.not_tagged: true;
-            ostd.ingress_port: exact;
-        }
-        actions = { access; NoAction; }
-        default_action = NoAction;
+        key = { ostd.ingress_port: exact; }
+        actions = { access; }
     }
 
     /* Table source MAC */
@@ -96,7 +94,7 @@ control IngressImpl (
 
     table src_mac {
         key = { hdr.ethernet.srcAddr: exact; }
-        actions = { learn; nop; }
+        actions = { learn; }
         default_action = learn;
         support_timeout = true;
     }
@@ -124,7 +122,9 @@ control IngressImpl (
 
     apply {
         ostd.drop = 0;
-        set_vlan.apply();
+        if (!meta.is_tagged) {
+            set_vlan.apply();
+        }
         src_mac.apply();
         dst_mac.apply();
         clone(CloneType.I2E, 32w0);
@@ -140,12 +140,20 @@ control EgressImpl (
     /* Table change vlan */
 
     action set_vlan(vid_t vlan_id) {
-        hdr.dot1q.vid = vlan_id;
+        if (hdr.dot1q.vid != vlan_id) {
+            hdr.dot1q.vid = vlan_id;
+            hdr.ethernet.etherType = DOT1Q_ETHTYPE;
+            meta.is_tagged = true;
+        }
+    }
+
+    action remove_vlan() {
+        meta.is_tagged = false;
     }
 
     table change_vlan {
         key = { ostd.egress_spec: exact; }
-        actions = { set_vlan; NoAction; }
+        actions = { set_vlan; remove_vlan; NoAction; }
         default_action = NoAction;
     }
 
@@ -167,7 +175,11 @@ control DeparserImpl (
 {
     apply {
         buffer.emit(hdr.ethernet);
-        buffer.emit(hdr.dot1q);
+        // No meta field in deparser in v1model. Conditional statements
+        // are not supported in deparser of switch emulator
+        // if (meta.is_tagged) {
+            buffer.emit(hdr.dot1q);
+        // }
     }
 }
 
