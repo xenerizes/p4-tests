@@ -58,8 +58,6 @@ control IngressImpl (
     inout standard_metadata_t ostd
     )
 {
-    action nop() { }
-
     /* Table set VLAN */
 
     action access(vid_t vlan_id) {
@@ -71,8 +69,8 @@ control IngressImpl (
             ostd.ingress_port: exact;
             hdr.dot1q.vid: exact;
         }
-        actions = { access; nop; }
-        default_action = nop;
+        actions = { access; NoAction; }
+        default_action = NoAction;
     }
 
     /* Table source MAC */
@@ -127,8 +125,6 @@ control EgressImpl (
     inout standard_metadata_t ostd
     )
 {
-    action nop() { }
-
     /* Table change vlan */
 
     action set_vlan(vid_t vlan_id) {
@@ -137,8 +133,8 @@ control EgressImpl (
 
     table change_vlan {
         key = { ostd.egress_spec: exact; }
-        actions = { set_vlan; nop; }
-        default_action = nop;
+        actions = { set_vlan; NoAction; }
+        default_action = NoAction;
     }
 
     apply {
