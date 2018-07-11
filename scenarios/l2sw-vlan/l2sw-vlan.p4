@@ -18,6 +18,7 @@ struct headers_t {
 struct learn_digest_t {
     port_t port;
     ethaddr_t src_mac;
+    vid_t vlan_id;
 }
 
 struct metadata {
@@ -89,6 +90,7 @@ control IngressImpl (
         learn_digest_t msg;
         msg.src_mac = hdr.ethernet.srcAddr;
         msg.port = ostd.ingress_port;
+        msg.vlan_id = hdr.dot1q.vid;
         digest(MAC_LEARN_RCVR, msg);
     }
 
