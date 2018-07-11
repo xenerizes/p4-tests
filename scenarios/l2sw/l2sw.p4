@@ -6,6 +6,9 @@
 #define MAC_LEARN_RCVR 1
 #define BROADCAST_GRP 1
 
+#define BROADCAST_MAC 0xffffffffffff
+#define MAX_FRAME_SIZE 16018
+
 
 struct headers_t {
     ethernet_t ethernet;
@@ -18,6 +21,11 @@ struct learn_digest_t {
 
 struct metadata { }
 
+error {
+    BroadcastSrc,
+    PacketTooLong
+}
+
 parser ParserImpl (
     packet_in buffer,
     out headers_t parsed_hdr,
@@ -26,11 +34,16 @@ parser ParserImpl (
     )
 {
     state start {
+        // Reject too long frames. Compiler does not support that for v1model
+        // bit<32> frame_len = buffer.length();
+        // verify(frame_len > MAX_FRAME_SIZE, error.PacketTooLong);
         transition parse_eth;
     }
 
     state parse_eth {
         buffer.extract(parsed_hdr.ethernet);
+        // Reject frames with broadcast src MAC. Switch emulator throws and terminates 
+        // verify(parsed_hdr.ethernet.srcAddr == BROADCAST_MAC, error.BroadcastSrc);
         transition accept;
     }
 }
