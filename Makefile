@@ -38,3 +38,5 @@ test:
 graphs: scenario-l2sw-graphs scenario-l2sw-vlan-graphs
 
 clean: scenario-l2sw-clean scenario-l2sw-vlan-clean
+
+.DEFAULT_GOAL := all
