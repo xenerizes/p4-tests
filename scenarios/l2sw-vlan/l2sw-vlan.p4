@@ -6,6 +6,9 @@
 #define MAC_LEARN_RCVR 1
 #define BROADCAST_GRP 1
 
+#define DOT1Q_ETHTYPE 0x8100
+#define DOT1Q_ETHTYPE_QINQ 0x88A8
+
 
 struct headers_t {
     ethernet_t ethernet;
@@ -17,7 +20,9 @@ struct learn_digest_t {
     ethaddr_t src_mac;
 }
 
-struct metadata { }
+struct metadata {
+    bool not_tagged;
+}
 
 parser ParserImpl (
     packet_in buffer,
@@ -27,14 +32,19 @@ parser ParserImpl (
     )
 {
     state start {
+        meta.not_tagged = false;
         transition parse_eth;
     }
 
     state parse_eth {
         buffer.extract(parsed_hdr.ethernet);
         transition select(parsed_hdr.ethernet.etherType) {
-            0x8100: parse_dot1q;
-            default: accept;
+            DOT1Q_ETHTYPE: parse_dot1q;
+            DOT1Q_ETHTYPE_QINQ: parse_dot1q;
+            default: {
+                meta.not_tagged = true;
+                accept;
+            }
         }
     }
 
@@ -66,8 +76,8 @@ control IngressImpl (
 
     table set_vlan {
         key = {
+            meta.not_tagged: true;
             ostd.ingress_port: exact;
-            hdr.dot1q.vid: exact;
         }
         actions = { access; NoAction; }
         default_action = NoAction;
