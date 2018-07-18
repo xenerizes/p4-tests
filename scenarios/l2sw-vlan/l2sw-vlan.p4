@@ -127,7 +127,6 @@ control IngressImpl (
         }
         src_mac.apply();
         dst_mac.apply();
-        clone(CloneType.I2E, 32w0);
     }
 }
 
