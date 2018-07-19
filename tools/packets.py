@@ -18,4 +18,6 @@ def make_pkt(dst, iface, mcast=False, id=None):
 
 
 def add_vlan_tag(pkt, vid):
-    return pkt.clone_with(payload=Dot1Q(vlan=vid)/pkt.payload)
+    etherlayer = pkt.copy()
+    etherlayer.remove_payload()
+    return etherlayer/Dot1Q(vlan=vid)/pkt.payload
