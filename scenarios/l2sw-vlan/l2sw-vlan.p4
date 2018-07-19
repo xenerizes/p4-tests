@@ -48,7 +48,7 @@ parser ParserImpl (
 
     state not_tagged {
         meta.is_tagged = false;
-        transition accept;
+        transition parse_dot1q;
     }
 
     state parse_dot1q {
@@ -152,7 +152,7 @@ control EgressImpl (
     }
 
     table change_vlan {
-        key = { ostd.egress_spec: exact; }
+        key = { ostd.egress_port: exact; }
         actions = { set_vlan; remove_vlan; NoAction; }
         default_action = NoAction;
     }
