@@ -1,4 +1,4 @@
-from scapy.all import Ether, TCP, IP
+from scapy.all import Ether, TCP, IP, Dot1Q
 from scapy.all import RandMAC, RandIP
 from scapy.all import get_if_hwaddr
 from random import randint
@@ -15,3 +15,7 @@ def make_pkt(dst, iface, mcast=False, id=None):
     if id is not None:
         pkt = pkt/(id)
     return pkt
+
+
+def add_vlan_tag(pkt, vid):
+    return pkt.clone_with(payload=Dot1Q(vlan=vid)/pkt.payload)
