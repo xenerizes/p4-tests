@@ -2,26 +2,23 @@ from tools.switch_monitor import SwitchMonitor
 from scapy.all import Raw
 from sys import stdout
 
-
-def compare_pkt_list(captured, expected):
-    try:
-        captured_ids = [x[Raw].load for x in captured]
-        expected_ids = [x[Raw].load for x in expected]
-        return captured_ids == expected_ids
-    except IndexError:
-        # There is a packet without Raw layer
-        return False
+def pkt_list_comparator(captured, expected, id_extractor):
+    captured_ids = [id_extractor(x) for x in captured]
+    expected_ids = [id_extractor(x) for x in expected]
+    return captured_ids == expected_ids
 
 
 class ScenarioTestCase(object):
     """
     Run test case: send, receive packets and compare with expected
     """
-    def __init__(self, port_map, packet_map, expected_map, scenario, test):
+    def __init__(self, port_map, packet_map, expected_map, scenario, test,
+                 extractor):
         self.port_map = port_map
         self.packet_map = packet_map
         self.expected_map = expected_map
         self.captured_map = None
+        self.extractor = extractor
         self.name = "Test \"{}\" for scenario \"{}\"".format(test, scenario)
         self.delim = "... "
 
@@ -43,7 +40,8 @@ class ScenarioTestCase(object):
 
     def compare_pkt_maps(self):
         for port in self.expected_map.keys():
-            if not compare_pkt_list(self.captured_map[port],
-                                    self.expected_map[port]):
+            if not pkt_list_comparator(self.captured_map[port],
+                                       self.expected_map[port],
+                                       self.extractor):
                 return False
         return True

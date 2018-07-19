@@ -5,6 +5,7 @@ from scapy.all import RandMAC, RandIP
 from scapy.all import get_if_hwaddr
 from tools.test_case import ScenarioTestCase
 from tools.packets import make_pkt, add_vlan_tag
+from tools.packet_id import raw_id_extractor
 from random import randint
 from re import search
 
@@ -56,5 +57,6 @@ expected_maps = [
 for idx, test_name in enumerate(tests):
     test = ScenarioTestCase(scenario=SCENARIO, test=test_name,
                             port_map=port_map, packet_map=test_maps[idx],
-                            expected_map=expected_maps[idx])
+                            expected_map=expected_maps[idx],
+                            extractor=raw_id_extractor)
     test.run()
