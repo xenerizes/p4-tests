@@ -139,11 +139,12 @@ control EgressImpl (
     /* Table change vlan */
 
     action set_vlan(vid_t vlan_id) {
-        if (hdr.dot1q.vid != vlan_id) {
+        // Simple switch throws on boolean assignment with complex conditions
+        // if (hdr.dot1q.vid != vlan_id) {
             hdr.dot1q.vid = vlan_id;
             hdr.ethernet.etherType = DOT1Q_ETHTYPE;
             meta.is_tagged = true;
-        }
+        // }
     }
 
     action remove_vlan() {
