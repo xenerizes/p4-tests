@@ -25,7 +25,7 @@ function start_switch {
 
 function stop_switch {
   pkill -P $$ &&
-  wait
+  wait &> /dev/null
 }
 
 ./tools/veth_setup.sh > /dev/null ;
