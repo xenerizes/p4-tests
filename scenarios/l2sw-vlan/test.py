@@ -59,4 +59,3 @@ for idx, test_name in enumerate(tests):
                             expected_map=expected_maps[idx],
                             extractor=raw_id_extractor)
     test.run()
-    break
