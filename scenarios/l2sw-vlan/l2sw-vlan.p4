@@ -160,9 +160,9 @@ control EgressImpl (
     inout standard_metadata_t ostd
     )
 {
-    /* Table change vlan */
+    /* Table vlan: set VLAN for each port */
 
-    action set_vlan(vid_t vlan_id) {
+    action change_vlan(vid_t vlan_id) {
         // Simple switch throws on boolean assignment with complex conditions
         // if (hdr.dot1q.vid != vlan_id) {
             hdr.dot1q.vid = vlan_id;
@@ -170,19 +170,19 @@ control EgressImpl (
         // }
     }
 
-    // This has no effect
+    // This has no effect because of Deparser limitations
     action remove_vlan() {
         meta.is_tagged = false;
     }
 
-    table change_vlan {
+    table vlan {
         key = { ostd.egress_spec: exact; }
-        actions = { set_vlan; remove_vlan; NoAction; }
+        actions = { change_vlan; remove_vlan; NoAction; }
         default_action = NoAction;
     }
 
     apply {
-        change_vlan.apply();
+        vlan.apply();
     }
 }
 
