@@ -8,6 +8,7 @@
 
 #define DOT1Q_ETHTYPE 0x8100
 #define DOT1Q_ETHTYPE_QINQ 0x88A8
+#define DOT1Q_NONE_VID 12w0
 
 
 struct headers_t {
@@ -22,6 +23,10 @@ struct learn_digest_t {
 }
 
 struct metadata {
+    // This field, in fact, has an effect only when the packet comes from
+    // access port (untagged). Unfortunately, v1model and switch emulator
+    // do not allow to remove the tag from one packet, but keep on another.
+    // See more in Deparser
     bool is_tagged;
 }
 
@@ -48,7 +53,7 @@ parser ParserImpl (
 
     state not_tagged {
         meta.is_tagged = false;
-        transition parse_dot1q;
+        transition accept;
     }
 
     state parse_dot1q {
@@ -71,15 +76,20 @@ control IngressImpl (
     inout standard_metadata_t ostd
     )
 {
-    /* Table set VLAN */
+    /* Table access: set VLAN for access port */
 
-    action access(vid_t vlan_id) {
+    action set_vlan(vid_t vlan_id) {
+        hdr.dot1q.etherType = hdr.ethernet.etherType;
+        hdr.ethernet.etherType = DOT1Q_ETHTYPE;
         hdr.dot1q.vid = vlan_id;
     }
 
-    table set_vlan {
+    table access {
         key = { ostd.ingress_port: exact; }
-        actions = { access; }
+        actions = { set_vlan; }
+        // Because of switch emulator restrictions we have to set NONE tag
+        // to all untagged packets here; see explanations in Deparser
+        default_action = set_vlan(DOT1Q_NONE_VID);
     }
 
     /* Table source MAC */
@@ -93,7 +103,10 @@ control IngressImpl (
     }
 
     table src_mac {
-        key = { hdr.ethernet.srcAddr: exact; }
+        key = {
+            hdr.ethernet.srcAddr: exact;
+            hdr.dot1q.vid: exact;
+        }
         actions = { learn; }
         default_action = learn;
         support_timeout = true;
@@ -101,6 +114,13 @@ control IngressImpl (
 
     /* Table destination MAC */
 
+    // Broadcast sends packet to all ports (iff multicast group with id 1 which
+    // contains all the ports was created on switch). Grouping by vlan can be
+    // implemented only via multicast groups too, which is not the desired
+    // behavior. In any case we can't exclude packet source port from the
+    // multicast group without explicit creation of `broadcast` multicast group
+    // for each (port, vlan) pair via switch CLI or P4Runtime (controller), i.e.
+    // there is no built-in port grouping mechanism in P4 language.
     action broadcast() {
         ostd.mcast_grp = BROADCAST_GRP;
     }
@@ -114,7 +134,11 @@ control IngressImpl (
     }
 
     table dst_mac {
-        key = { hdr.ethernet.dstAddr: exact; }
+        key = {
+            hdr.ethernet.dstAddr: exact;
+            // Ternary for multicast, where vlan should have no effect
+            hdr.dot1q.vid: ternary;
+        }
         actions = { broadcast; forward; multicast; }
         default_action = broadcast;
         support_timeout = true;
@@ -123,7 +147,7 @@ control IngressImpl (
     apply {
         ostd.drop = 0;
         if (!meta.is_tagged) {
-            set_vlan.apply();
+            access.apply();
         }
         src_mac.apply();
         dst_mac.apply();
@@ -142,17 +166,17 @@ control EgressImpl (
         // Simple switch throws on boolean assignment with complex conditions
         // if (hdr.dot1q.vid != vlan_id) {
             hdr.dot1q.vid = vlan_id;
-            hdr.ethernet.etherType = DOT1Q_ETHTYPE;
             meta.is_tagged = true;
         // }
     }
 
+    // This has no effect
     action remove_vlan() {
         meta.is_tagged = false;
     }
 
     table change_vlan {
-        key = { ostd.egress_port: exact; }
+        key = { ostd.egress_spec: exact; }
         actions = { set_vlan; remove_vlan; NoAction; }
         default_action = NoAction;
     }
@@ -178,6 +202,9 @@ control DeparserImpl (
         // No meta field in deparser in v1model. Conditional statements
         // are not supported in deparser of switch emulator
         // if (meta.is_tagged) {
+            // Consequently, we can handle all packets, but output packets
+            // should be all tagged or all untagged. The best solution I found
+            // is to add fixed DOT1Q_NONE_VID tag to all untagged packets.
             buffer.emit(hdr.dot1q);
         // }
     }
