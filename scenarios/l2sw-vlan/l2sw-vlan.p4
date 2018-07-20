@@ -80,7 +80,10 @@ control IngressImpl (
 
     action set_vlan(vid_t vlan_id) {
         hdr.dot1q.etherType = hdr.ethernet.etherType;
-        hdr.ethernet.etherType = DOT1Q_ETHTYPE;
+        // If uncomment, untagged packets are damaged. 802.1Q header is not
+        // extracted, and changes of its fields aren't saved (limitations of
+        // switch emulator), but Ethernet fields are changed in this case.
+        // hdr.ethernet.etherType = DOT1Q_ETHTYPE;
         hdr.dot1q.vid = vlan_id;
     }
 
